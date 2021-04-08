@@ -100,11 +100,11 @@ This will generate a target `Example` that contains all the required gluecode fr
 
 All C++ classes will be in the namespace `Demo`, all Java classes in the package `demo` and all ObjC structures will have the prefix `D`.
 
-All generated header files can be found on the include path under `Demo/...`
+All generated header files can be found on the include path under `Demo/`
 
 If the target platform is Android, a jar named `Example.jar` will be built to `${CMAKE_CURRENT_BINARY_DIR}` once the target `Example` is built.
 
-If the target platform is Darwin (iOS/macOS), a Swift Bridging Header can be found on the include path: `Demo/ExampleBridge.h`
+If the target platform is Darwin (iOS/macOS/watchOS/tvOS), a Swift Bridging Header can be found on the include path: `Demo/Example.h`
 
 ## Credits
 
