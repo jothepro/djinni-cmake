@@ -28,7 +28,7 @@ It may evolve over time to a more powerful tool with more configuration options.
 
 ## Installation
 
-Copy the file `Djinni.cmake` from the latest release to your cmake modules folder and include it in the root `CMakeLists.txt`:
+Copy the file `Djinni.cmake` from the latest release to your CMake modules folder and include it in the root `CMakeLists.txt`:
 
 ```cmake
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
@@ -74,8 +74,8 @@ The options are:
   | `NAMESPACE` value | C++ namespace          | Java package           | ObjC prefix |
   | ----------------- | ---------------------- | ---------------------- | ------------|
   | `Djinni::Lib`     | `Djinni::Lib`          | `djinni.lib`           | `DL`        |
-  | `My::LibExample`| `My::LibExample`         | `my.libexample`        | `MLE`       |
-  | `My::Djinni-Lib`  | `My::Djinni-Lib`       | `my.djinni_lib`        | `MDL`       |
+  | `My::LibExample`  | `My::LibExample`         | `my.libexample`        | `MLE`       |
+  
 - `DIRECTORY <output-dir>`<br>
   Optional; Default: `djinni-generated`<br>
   The output directory where the generated code should be written to.
