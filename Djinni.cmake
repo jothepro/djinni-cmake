@@ -167,12 +167,19 @@ function(djinni LIBRARY_TARGET)
 
     target_link_libraries(${LIBRARY_TARGET} PUBLIC djinni-support-lib::djinni-support-lib)
 
+    install(DIRECTORY ${DJINNI_DIRECTORY}/cpp/include/
+            DESTINATION include)
+
     if(ANDROID)
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_JNI_INCLUDE_DIR})
+        install(DIRECTORY ${DJINNI_DIRECTORY}/jni/include/
+                DESTINATION include)
     elseif(DARWIN)
         target_compile_options(${LIBRARY_TARGET} PRIVATE -fobjc-arc)
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_OBJC_INCLUDE_DIR})
+        install(DIRECTORY ${DJINNI_DIRECTORY}/objc/include/
+                DESTINATION include)
     endif()
 
 endfunction()
