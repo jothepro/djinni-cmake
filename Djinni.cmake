@@ -104,7 +104,7 @@ function(add_djinni_library LIBRARY_TARGET)
     endif()
 
     # find Djinni executable.
-    # On windows find_program() does not work for finding the `djinni.bat` script.
+    # On Windows `find_program()` does not work for finding the `djinni.bat` script.
     # The script must either be on the PATH or `DJINNI_EXECUTABLE` must explicitly be predefined.
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         if(NOT DEFINED CACHE{DJINNI_EXECUTABLE})
