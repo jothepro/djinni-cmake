@@ -32,12 +32,10 @@ function(add_djinni_library LIBRARY_TARGET)
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
-            "SOURCES"
+            "SOURCES;DEPENDENCIES"
         # args
             ${ARGN}
     )
-
-    find_package(djinni-support-lib)
 
     set(MESSAGE_PREFIX "[djinni]")
 
@@ -67,7 +65,6 @@ function(add_djinni_library LIBRARY_TARGET)
     string(REGEX REPLACE "[a-z:\\-_]" "" DJINNI_OBJC_PREFIX ${DJINNI_NAMESPACE})
 
     # prepare input variables
-    set(DJINNI_INCLUDE_DIR ${DJINNI_DIRECTORY}/include)
     set(DJINNI_CPP_OUT ${DJINNI_DIRECTORY}/cpp/src)
     set(DJINNI_CPP_INCLUDE_PREFIX ${DJINNI_NAMESPACE_PATH}/)
     set(DJINNI_CPP_INCLUDE_DIR ${DJINNI_DIRECTORY}/cpp/include/)
@@ -87,6 +84,15 @@ function(add_djinni_library LIBRARY_TARGET)
     set(DJINNI_JAVA_OUT ${DJINNI_DIRECTORY}/java/${DJINNI_JAVA_PATH})
     set(DJINNI_OBJC_SWIFT_BRIDGING_HEADER ${LIBRARY_TARGET})
     set(DJINNI_JAVA_LIBRARY_TARGET ${LIBRARY_TARGET}-android)
+    set(DJINNI_IDL_INCLUDE_PATH ${DJINNI_DIRECTORY}/yaml/include)
+    set(DJINNI_YAML_OUT ${DJINNI_IDL_INCLUDE_PATH}/${DJINNI_NAMESPACE_PATH})
+    set(DJINNI_YAML_OUT_FILE ${LIBRARY_TARGET}.yaml)
+
+    set(DJINNI_IDL_INCLUDE_PATHS ${DJINNI_IDL_INCLUDE_PATH})
+    foreach(DJINNI_DEPENDENCY ${DJINNI_DEPENDENCIES})
+        get_target_property(DJINNI_DEPENDENCY_INCLUDE_DIR ${DJINNI_DEPENDENCY} INCLUDE_DIRECTORIES)
+        string(APPEND DJINNI_IDL_INCLUDE_PATHS " ${DJINNI_DEPENDENCY_INCLUDE_DIR}")
+    endforeach()
 
     # determine target platform & target language
     set(DARWIN_OS_LIST "Darwin;iOS;tvOS;watchOS")
@@ -130,6 +136,7 @@ function(add_djinni_library LIBRARY_TARGET)
         # generate java code
         execute_process(COMMAND ${DJINNI_EXECUTABLE}
                 --idl ${DJINNI_IDL}
+                --idl-include-path ${DJINNI_IDL_INCLUDE_PATHS}
                 --java-out ${DJINNI_JAVA_OUT}
                 --java-package ${DJINNI_JAVA_PACKAGE}
                 --list-out-files ${DJINNI_GENERATED_JAVA_FILES_OUTFILE}
@@ -175,10 +182,13 @@ function(add_djinni_library LIBRARY_TARGET)
     # generate c++ interface
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
             --idl ${DJINNI_IDL}
+            --idl-include-path ${DJINNI_IDL_INCLUDE_PATHS}
             --cpp-out ${DJINNI_CPP_OUT}
             --cpp-namespace ${DJINNI_NAMESPACE}
             --cpp-header-out ${DJINNI_CPP_HEADER_OUT}
             --cpp-include-prefix ${DJINNI_CPP_INCLUDE_PREFIX}
+            --yaml-out ${DJINNI_YAML_OUT}
+            --yaml-out-file ${DJINNI_YAML_OUT_FILE}
             --list-out-files ${DJINNI_GENERATED_FILES_OUTFILE}
             ${ADDITIONAL_DJINNI_PARAMETERS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -197,12 +207,16 @@ function(add_djinni_library LIBRARY_TARGET)
 
     target_compile_features(${LIBRARY_TARGET} PUBLIC cxx_std_17)
 
-    target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_CPP_INCLUDE_DIR})
+    target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_CPP_INCLUDE_DIR} ${DJINNI_IDL_INCLUDE_PATH})
 
-    target_link_libraries(${LIBRARY_TARGET} PUBLIC djinni-support-lib::djinni-support-lib)
+    target_link_libraries(${LIBRARY_TARGET} PRIVATE djinni-support-lib::djinni-support-lib ${DJINNI_DEPENDENCIES})
 
-    install(DIRECTORY ${DJINNI_DIRECTORY}/cpp/include/
-            DESTINATION include)
+    install(
+        DIRECTORY
+            ${DJINNI_DIRECTORY}/cpp/include/
+            ${DJINNI_DIRECTORY}/yaml/include/
+        DESTINATION include
+    )
 
     if(ANDROID)
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
