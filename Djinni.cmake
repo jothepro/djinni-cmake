@@ -28,7 +28,7 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "SHARED;STATIC"
+            "SHARED;STATIC;NO_JNI_MAIN"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
@@ -151,12 +151,19 @@ function(add_djinni_library LIBRARY_TARGET)
                 OUTPUT_DIR ${DJINNI_JAR_OUTPUT_DIR}
                 OUTPUT_NAME ${LIBRARY_TARGET})
 
+        if(NOT DEFINED DJINNNI_NO_JNI_MAIN)
+            set(DJINNI_GENERATE_MAIN false)
+        else()
+            set(DJINNI_GENERATE_MAIN true)
+        endif()
+
         set(ADDITIONAL_DJINNI_PARAMETERS
                 --jni-out ${DJINNI_JNI_OUT}
                 --jni-header-out ${DJINNI_JNI_HEADER_OUT}
                 --jni-namespace ${DJINNI_JNI_NAMESPACE}
                 --jni-include-prefix ${DJINNI_JNI_INCLUDE_PREFIX}
-                --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX})
+                --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX}
+                --jni-generate-main ${DJINNI_GENERATE_MAIN})
     # prepare parameters for Objective-C & Objective-C++ generation.
     elseif(DARWIN)
         set(ADDITIONAL_DJINNI_PARAMETERS

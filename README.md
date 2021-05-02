@@ -44,6 +44,7 @@ Watch this repository so you don't miss updates! 🔔
 add_djinni_library(<target> 
         IDL <filename>
         [SHARED | STATIC]
+        [NO_JNI_MAIN]
         [NAMESPACE <namespace>]
         [DIRECTORY <output-dir>]
         [SOURCES <sources>]
@@ -73,6 +74,9 @@ The options are:
 - `SHARED | STATIC`<br>
   Optional;<br>
   Whether to make the target a `SHARED` or `STATIC` library. If none is given, the preset of `BUILD_SHARED_LIBS` will be followed.
+- `NO_JNI_MAIN`<br>
+  Optional;<br>
+  By default `JNI_OnLoad` & `JNI_OnUnload` entrypoints for JNI are included. Set this argument to not include entrypoints.
 - `NAMESPACE <namespace>`<br>
   Optional; Default: `Djinni`<br>
   The namespace for the generated code. Each namespace part should start with an uppercase letter.
