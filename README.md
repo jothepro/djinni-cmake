@@ -24,8 +24,8 @@ It may evolve over time to a more powerful tool with more configuration options.
 ## Prerequisites
 
 - [CMake](https://cmake.org/) >= 3.18
-- [Djinni Generator](https://github.com/cross-language-cpp/djinni-generator) >= 0.5.0
-- [Djinni Support Lib](https://github.com/cross-language-cpp/djinni-support-lib) >= 0.1.1 (must be available as CMake target `djinni-support-lib::djinni-support-lib`)
+- [Djinni Generator](https://github.com/cross-language-cpp/djinni-generator) >= 1.0.0
+- [Djinni Support Lib](https://github.com/cross-language-cpp/djinni-support-lib) >= 1.0.0 (must be available as CMake target `djinni-support-lib::djinni-support-lib`)
 
 ## Installation
 
@@ -62,7 +62,7 @@ when the target `<target>` is built.
 
 If an  unsupported target platform (everything except Android, iOS, macOS, tvOS, watchOS, Windows) is detected, only the C++ interface is generated.
 
-This generator is intentionally favouring convention over configuration to keep things as simple as possible.
+This generator is intentionally favoring convention over configuration to keep things as simple as possible.
 If you miss a configuration option anyways, please consider opening an issue.
 
 ## Options

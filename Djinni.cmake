@@ -94,6 +94,9 @@ function(add_djinni_library LIBRARY_TARGET)
         string(APPEND DJINNI_IDL_INCLUDE_PATHS " ${DJINNI_DEPENDENCY_INCLUDE_DIR}")
     endforeach()
 
+    # trigger re-generation if IDL file changes
+    set_directory_properties(PROPERTIES CMAKE_CONFIGURE_DEPENDS ${DJINNI_IDL})
+
     # determine target platform & target language
     set(DARWIN_OS_LIST "Darwin;iOS;tvOS;watchOS")
     set(WINDOWS_OS_LIST "Windows;WindowsStore")
