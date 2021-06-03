@@ -19,13 +19,12 @@ It may evolve over time to a more powerful tool with more configuration options.
 - 🎯 Easy to use
 - 🧶 Little configuration required
 - 🧩 Convention over configuration
-- 🎳 Supports targets Java (Android), Objective-C (macOS, iOS, ...) and C# (Windows)
+- 🎳 Supports targets Java (Android), Objective-C (macOS, iOS, ...) and C# (Windows .NET 5)
 
 ## Prerequisites
 
 - [CMake](https://cmake.org/) >= 3.18
 - [Djinni Generator](https://github.com/cross-language-cpp/djinni-generator) >= 1.0.0
-- [Djinni Support Lib](https://github.com/cross-language-cpp/djinni-support-lib) >= 1.0.0 (must be available as CMake target `djinni-support-lib::djinni-support-lib`)
 
 ## Installation
 
@@ -38,7 +37,22 @@ include(Djinni)
 
 Watch this repository so you don't miss updates! 🔔
 
-## Synopsis
+## Functions/Macros provided by this module
+
+### Initializing a Djinni CMake project
+
+```cmake
+djinni_project(<PROJECT-NAME>)
+```
+
+Initializes a normal CMake project with some Djinni-specific extras:
+
+- Automatically selects the languages that need to be enabled depending on the platform.
+- Additionally sets the variables `DARWIN` or `WINDOWS` to `1` depending on the platform.
+  This complements the variable `ANDROID` set by default if building for Android.
+  You can use these 3 variables for your own platform specific configuration logic.
+
+### Adding a Djinni target
 
 ```cmake
 add_djinni_library(<target> 
@@ -65,7 +79,7 @@ If an  unsupported target platform (everything except Android, iOS, macOS, tvOS,
 This generator is intentionally favoring convention over configuration to keep things as simple as possible.
 If you miss a configuration option anyways, please consider opening an issue.
 
-## Options
+#### Options
 
 The options are:
 
@@ -101,6 +115,18 @@ The options are:
 - `JAR_OUTPUT_DIR <jar-output-dir>`<br>
   Optional; Default: `${CMAKE_CURRENT_BINARY_DIR}`<br>
   The directory to which the jar should be written if gluecode for Android is created.
+  
+
+### Linking the djinni-support-lib
+
+```cmake
+djinni_target_link_support_lib(<target> <support-lib-version>)
+```
+
+Automatically fetches the djinni-support-lib with `FetchContent` and links it to the given target.
+
+This wrapper is needed because when building for Windows .NET 5 a workaround is required to link the support-lib.
+This macro may become obsolete once [this problem](https://github.com/cross-language-cpp/djinni-support-lib/pull/33) is fixed.
 
 ## Example
 
@@ -109,15 +135,20 @@ The options are:
 Given a Djinni-IDL file named `example.djinni`, this is all you need in your `CMakeLists.txt`:
 
 ```cmake
-find_package(djinni-support-lib)
+djinni_project(ExampleProject)
 
 add_djinni_library(Example
     IDL example.djinni
     NAMESPACE Demo
+    SOURCES
+      src/example.cpp
 )
+
+djinni_target_link_support_lib(Example v1.0.0)
 ```
 
-This will generate a target `Example` that contains all the required gluecode from the interface defined in `example.djinni`.
+This will generate a target `Example` that contains all the required gluecode from the interface defined in `example.djinni` and
+it's implementation source `src/example.cpp`.
 
 All C++ classes will be in the namespace `Demo`, all Java classes in the package `demo` and all ObjC structures will have the prefix `D`.
 
