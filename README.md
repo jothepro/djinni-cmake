@@ -57,7 +57,6 @@ Initializes a normal CMake project with some Djinni-specific extras:
 ```cmake
 add_djinni_library(<target> 
         IDL <filename>
-        [SHARED | STATIC]
         [NO_JNI_MAIN]
         [NAMESPACE <namespace>]
         [DIRECTORY <output-dir>]
@@ -85,9 +84,6 @@ The options are:
 
 - `IDL <filename>`<br>
   filename/path of the Djinni-IDL file that should be processed.
-- `SHARED | STATIC`<br>
-  Optional;<br>
-  Whether to make the target a `SHARED` or `STATIC` library. If none is given, the preset of `BUILD_SHARED_LIBS` will be followed.
 - `NO_JNI_MAIN`<br>
   Optional;<br>
   By default `JNI_OnLoad` & `JNI_OnUnload` entrypoints for JNI are included. Set this argument to not include entrypoints.

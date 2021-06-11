@@ -28,7 +28,7 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "SHARED;STATIC;NO_JNI_MAIN"
+            "NO_JNI_MAIN"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
@@ -65,9 +65,10 @@ function(add_djinni_library LIBRARY_TARGET)
     string(REGEX REPLACE "[a-z:\\-_]" "" DJINNI_OBJC_PREFIX ${DJINNI_NAMESPACE})
 
     # prepare input variables
-    set(DJINNI_CPP_OUT ${DJINNI_DIRECTORY}/cpp/src)
+    set(DJINNI_CPP_DIR ${DJINNI_DIRECTORY}/cpp)
+    set(DJINNI_CPP_SRC_DIR ${DJINNI_CPP_DIR}/src)
     set(DJINNI_CPP_INCLUDE_PREFIX ${DJINNI_NAMESPACE_PATH}/)
-    set(DJINNI_CPP_INCLUDE_DIR ${DJINNI_DIRECTORY}/cpp/include/)
+    set(DJINNI_CPP_INCLUDE_DIR ${DJINNI_CPP_DIR}/include/)
     set(DJINNI_CPP_HEADER_OUT ${DJINNI_CPP_INCLUDE_DIR}/${DJINNI_CPP_INCLUDE_PREFIX})
     set(DJINNI_JNI_OUT ${DJINNI_DIRECTORY}/jni/src)
     set(DJINNI_JNI_INCLUDE_PREFIX ${DJINNI_NAMESPACE_PATH}/jni/)
@@ -130,32 +131,6 @@ function(add_djinni_library LIBRARY_TARGET)
 
     # generate Java sources and add prepare parameters for JNI generation.
     if(ANDROID)
-        find_package(Java 1.8 REQUIRED)
-        include(UseJava)
-
-        set(DJINNI_GENERATED_JAVA_FILES_OUTFILE ${CMAKE_CURRENT_BINARY_DIR}/djinni-generated-java-files.txt)
-
-        message(STATUS "${MESSAGE_PREFIX} Generating Java Gluecode")
-        # generate java code
-        execute_process(COMMAND ${DJINNI_EXECUTABLE}
-                --idl ${DJINNI_IDL}
-                --idl-include-path ${DJINNI_IDL_INCLUDE_DIRS}
-                --java-out ${DJINNI_JAVA_OUT}
-                --java-package ${DJINNI_JAVA_PACKAGE}
-                --list-out-files ${DJINNI_GENERATED_JAVA_FILES_OUTFILE}
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                )
-
-        file(STRINGS ${DJINNI_GENERATED_JAVA_FILES_OUTFILE} DJINNI_GENERATED_JAVA_FILES
-                ENCODING UTF-8)
-
-        add_jar(${DJINNI_JAVA_LIBRARY_TARGET}
-                SOURCES ${DJINNI_GENERATED_JAVA_FILES}
-                OUTPUT_DIR ${DJINNI_JAR_OUTPUT_DIR}
-                OUTPUT_NAME ${LIBRARY_TARGET})
-
-        install(FILES ${DJINNI_JAR_OUTPUT_DIR}/${LIBRARY_TARGET}.jar DESTINATION lib)
-
         if(NOT DEFINED DJINNNI_NO_JNI_MAIN)
             set(DJINNI_GENERATE_MAIN false)
         else()
@@ -163,6 +138,9 @@ function(add_djinni_library LIBRARY_TARGET)
         endif()
 
         set(ADDITIONAL_DJINNI_PARAMETERS
+                --idl ${DJINNI_IDL}
+                --idl-include-path ${DJINNI_IDL_INCLUDE_DIRS}
+                --java-out ${DJINNI_JAVA_OUT}
                 --java-package ${DJINNI_JAVA_PACKAGE}
                 --jni-out ${DJINNI_JNI_OUT}
                 --jni-header-out ${DJINNI_JNI_HEADER_OUT}
@@ -170,7 +148,6 @@ function(add_djinni_library LIBRARY_TARGET)
                 --jni-include-prefix ${DJINNI_JNI_INCLUDE_PREFIX}
                 --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX}
                 --jni-generate-main ${DJINNI_GENERATE_MAIN})
-    # prepare parameters for Objective-C & Objective-C++ generation.
     elseif(DARWIN)
         set(ADDITIONAL_DJINNI_PARAMETERS
                 --objc-out ${DJINNI_OBJC_OUT}
@@ -196,7 +173,7 @@ function(add_djinni_library LIBRARY_TARGET)
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
             --idl ${DJINNI_IDL}
             --idl-include-path ${DJINNI_IDL_INCLUDE_DIRS}
-            --cpp-out ${DJINNI_CPP_OUT}
+            --cpp-out ${DJINNI_CPP_SRC_DIR}
             --cpp-namespace ${DJINNI_NAMESPACE}
             --cpp-header-out ${DJINNI_CPP_HEADER_OUT}
             --cpp-include-prefix ${DJINNI_CPP_INCLUDE_PREFIX}
@@ -207,15 +184,18 @@ function(add_djinni_library LIBRARY_TARGET)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-    file(STRINGS ${DJINNI_GENERATED_FILES_OUTFILE} DJINNI_GENERATED_CPP_FILES
+    file(STRINGS ${DJINNI_GENERATED_FILES_OUTFILE} DJINNI_GENERATED_FILES
         ENCODING UTF-8)
 
-    if(DJINNI_SHARED)
-       set(DJINNI_LIBRARY_TYPE SHARED)
-    elseif(DJINNI_STATIC)
-        set(DJINNI_LIBRARY_TYPE STATIC)
-    endif()
-    add_library(${LIBRARY_TARGET} ${DJINNI_LIBRARY_TYPE} ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES})
+    # filter out java files from generated files
+    set(DJINNI_GENERATED_JAVA_FILES_REGEX "${DJINNI_JAVA_OUT}.*")
+    set(DJINNI_GENERATED_JAVA_FILES ${DJINNI_GENERATED_FILES})
+    list(FILTER DJINNI_GENERATED_JAVA_FILES INCLUDE REGEX ${DJINNI_GENERATED_JAVA_FILES_REGEX})
+
+    set(DJINNI_GENERATED_CPP_FILES ${DJINNI_GENERATED_FILES})
+    list(FILTER DJINNI_GENERATED_CPP_FILES EXCLUDE REGEX ${DJINNI_GENERATED_JAVA_FILES_REGEX})
+
+    add_library(${LIBRARY_TARGET} SHARED ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES} ${DJINNI_GENERATED_OTHER_FILES})
 
     target_link_libraries(${LIBRARY_TARGET} PRIVATE ${DJINNI_DEPENDENCIES})
     target_compile_features(${LIBRARY_TARGET} PUBLIC cxx_std_17)
@@ -236,6 +216,15 @@ function(add_djinni_library LIBRARY_TARGET)
     )
 
     if(ANDROID)
+        find_package(Java 1.8 REQUIRED)
+        include(UseJava)
+        add_jar(${DJINNI_JAVA_LIBRARY_TARGET}
+                SOURCES ${DJINNI_GENERATED_JAVA_FILES}
+                OUTPUT_DIR ${DJINNI_JAR_OUTPUT_DIR}
+                OUTPUT_NAME ${LIBRARY_TARGET})
+
+        install(FILES ${DJINNI_JAR_OUTPUT_DIR}/${LIBRARY_TARGET}.jar DESTINATION lib)
+
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_JNI_INCLUDE_DIR})
     elseif(DARWIN)
