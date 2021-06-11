@@ -91,9 +91,11 @@ function(add_djinni_library LIBRARY_TARGET)
 
     set(DJINNI_IDL_INCLUDE_DIRS ${DJINNI_IDL_INCLUDE_DIR})
     foreach(DJINNI_DEPENDENCY ${DJINNI_DEPENDENCIES})
-        get_target_property(DJINNI_DEPENDENCY_INCLUDE_DIR ${DJINNI_DEPENDENCY} INCLUDE_DIRECTORIES)
-        string(APPEND DJINNI_IDL_INCLUDE_DIRS " ${DJINNI_DEPENDENCY_INCLUDE_DIR}")
+        get_target_property(DJINNI_DEPENDENCY_INCLUDE_DIR ${DJINNI_DEPENDENCY} INTERFACE_INCLUDE_DIRECTORIES)
+        list(APPEND DJINNI_IDL_INCLUDE_DIRS "${DJINNI_DEPENDENCY_INCLUDE_DIR}")
     endforeach()
+    set(DJINNI_IDL_INCLUDE_PARAMETERS ${DJINNI_IDL_INCLUDE_DIRS})
+    list(TRANSFORM DJINNI_IDL_INCLUDE_PARAMETERS PREPEND "--idl-include-path;")
 
     # trigger re-generation if IDL file changes
     set_directory_properties(PROPERTIES CMAKE_CONFIGURE_DEPENDS ${DJINNI_IDL})
@@ -138,8 +140,6 @@ function(add_djinni_library LIBRARY_TARGET)
         endif()
 
         set(ADDITIONAL_DJINNI_PARAMETERS
-                --idl ${DJINNI_IDL}
-                --idl-include-path ${DJINNI_IDL_INCLUDE_DIRS}
                 --java-out ${DJINNI_JAVA_OUT}
                 --java-package ${DJINNI_JAVA_PACKAGE}
                 --jni-out ${DJINNI_JNI_OUT}
@@ -167,12 +167,12 @@ function(add_djinni_library LIBRARY_TARGET)
     endif()
 
     set(DJINNI_GENERATED_FILES_OUTFILE ${CMAKE_CURRENT_BINARY_DIR}/djinni-generated-files.txt)
-
     message(STATUS "${MESSAGE_PREFIX} Generating C++ Interface and Gluecode for ${TARGET_LANGUAGE}")
+
     # generate c++ interface
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
             --idl ${DJINNI_IDL}
-            --idl-include-path ${DJINNI_IDL_INCLUDE_DIRS}
+            ${DJINNI_IDL_INCLUDE_PARAMETERS}
             --cpp-out ${DJINNI_CPP_SRC_DIR}
             --cpp-namespace ${DJINNI_NAMESPACE}
             --cpp-header-out ${DJINNI_CPP_HEADER_OUT}
