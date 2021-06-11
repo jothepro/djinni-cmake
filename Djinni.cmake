@@ -197,7 +197,7 @@ function(add_djinni_library LIBRARY_TARGET)
 
     add_library(${LIBRARY_TARGET} SHARED ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES} ${DJINNI_GENERATED_OTHER_FILES})
 
-    target_link_libraries(${LIBRARY_TARGET} PRIVATE ${DJINNI_DEPENDENCIES})
+    target_link_libraries(${LIBRARY_TARGET} PUBLIC ${DJINNI_DEPENDENCIES})
     target_compile_features(${LIBRARY_TARGET} PUBLIC cxx_std_17)
 
     set_target_properties(${LIBRARY_TARGET} PROPERTIES
@@ -243,6 +243,9 @@ function(add_djinni_library LIBRARY_TARGET)
             MACOSX_FRAMEWORK_IDENTIFIER ${DJINNI_JAVA_PACKAGE}
             PUBLIC_HEADER "${DJINNI_GENERATED_PUBLIC_HEADER_FILES}"
         )
+
+        install(DIRECTORY ${DJINNI_OBJCPP_OUT} DESTINATION include
+                FILES_MATCHING PATTERN "*.h")
     elseif(WINDOWS)
         set_target_properties(${LIBRARY_TARGET} PROPERTIES
             COMMON_LANGUAGE_RUNTIME "netcore"
