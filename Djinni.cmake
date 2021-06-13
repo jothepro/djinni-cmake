@@ -135,12 +135,11 @@ function(add_djinni_library LIBRARY_TARGET)
 
     # generate Java sources and add prepare parameters for JNI generation.
     if(ANDROID)
-        if(NOT DEFINED DJINNNI_NO_JNI_MAIN)
+        if(DJINNI_NO_JNI_MAIN)
             set(DJINNI_GENERATE_MAIN false)
         else()
             set(DJINNI_GENERATE_MAIN true)
         endif()
-
         set(ADDITIONAL_DJINNI_PARAMETERS
                 --java-out ${DJINNI_JAVA_OUT}
                 --java-package ${DJINNI_JAVA_PACKAGE}
@@ -221,12 +220,24 @@ function(add_djinni_library LIBRARY_TARGET)
     if(ANDROID)
         find_package(Java 1.8 REQUIRED)
         include(UseJava)
+
+        foreach(DJINNI_JAR_INCLUDE_DIR ${DJINNI_IDL_INCLUDE_DIRS})
+            file(GLOB JAR_FILE LIST_DIRECTORIES false "${DJINNI_JAR_INCLUDE_DIR}/*.jar")
+            list(APPEND CMAKE_JAVA_INCLUDE_PATH ${JAR_FILE})
+        endforeach()
+        list(APPEND CMAKE_JAVA_INCLUDE_PATH ${DJINNI_IDL_INCLUDE_DIRS})
         add_jar(${DJINNI_JAVA_LIBRARY_TARGET}
                 SOURCES ${DJINNI_GENERATED_JAVA_FILES}
                 OUTPUT_DIR ${DJINNI_JAR_OUTPUT_DIR}
                 OUTPUT_NAME ${LIBRARY_TARGET})
 
-        install(FILES ${DJINNI_JAR_OUTPUT_DIR}/${LIBRARY_TARGET}.jar DESTINATION lib)
+        install(FILES ${DJINNI_JAR_OUTPUT_DIR}/${LIBRARY_TARGET}.jar DESTINATION include)
+
+        install(
+            DIRECTORY
+                ${DJINNI_JNI_INCLUDE_DIR}
+            DESTINATION include
+        )
 
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_JNI_INCLUDE_DIR})

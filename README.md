@@ -106,8 +106,9 @@ The options are:
   Additional sources. This could for example be the sources that implement the Djinni interface in C++.
 - `DEPENDENCIES <dependencies>` <br>
   Optional; <br>
-  Other targets that the library links to. Their include directories are appended to `--idl-include-path`. That way
-  other Djinni libraries can be linked because their YAML interface can be imported in the IDL file.
+  Other (Djinni) targets that the library links to. Their `include` directories are appended to `--idl-include-path` and
+  any `.jar` in the `include` directories will be appended to `CMAKE_JAVA_INCLUDE_PATH`. That way other Djinni libraries
+  can be linked.
 - `JAR_OUTPUT_DIR <jar-output-dir>`<br>
   Optional; Default: `${CMAKE_CURRENT_BINARY_DIR}`<br>
   The directory to which the jar should be written if gluecode for Android is created.
