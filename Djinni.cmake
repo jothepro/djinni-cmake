@@ -28,11 +28,11 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "NO_JNI_MAIN"
+            "NO_JNI_MAIN;STATIC;SHARED;INTERFACE"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
-            "SOURCES;DEPENDENCIES"
+            "LANGUAGES;SOURCES;DEPENDENCIES"
         # args
             ${ARGN}
     )
@@ -80,13 +80,14 @@ function(add_djinni_library LIBRARY_TARGET)
     set(DJINNI_OBJCPP_INCLUDE_CPP_PREFIX ${DJINNI_NAMESPACE_PATH}/)
     set(DJINNI_OBJC_INCLUDE_DIR ${DJINNI_DIRECTORY}/objc/include/)
     set(DJINNI_OBJC_HEADER_OUT ${DJINNI_OBJC_INCLUDE_DIR}${LIBRARY_TARGET}/)
-    set(DJINNI_OBJCPP_INCLUDE_DIR ${DJINNI_DIRECTORY}/objcpp/src/)
-    set(DJINNI_OBJCPP_OUT ${DJINNI_OBJCPP_INCLUDE_DIR}${LIBRARY_TARGET}/)
+    set(DJINNI_OBJCPP_INCLUDE_DIR ${DJINNI_DIRECTORY}/objcpp/include/)
+    set(DJINNI_OBJCPP_OUT ${DJINNI_DIRECTORY}/objcpp/src/)
+    set(DJINNI_OBJCPP_HEADER_OUT ${DJINNI_OBJCPP_INCLUDE_DIR}${LIBRARY_TARGET}/)
     set(DJINNI_OBJCPP_INCLUDE_PREFIX ${LIBRARY_TARGET}/)
     set(DJINNI_CPPCLI_OUT ${DJINNI_DIRECTORY}/cppcli/src/)
     set(DJINNI_JAVA_OUT ${DJINNI_DIRECTORY}/java/${DJINNI_JAVA_PATH})
     set(DJINNI_OBJC_SWIFT_BRIDGING_HEADER ${LIBRARY_TARGET})
-    set(DJINNI_JAVA_LIBRARY_TARGET ${LIBRARY_TARGET}-android)
+    set(DJINNI_JAVA_LIBRARY_TARGET ${LIBRARY_TARGET}-java)
     set(DJINNI_IDL_INCLUDE_DIR ${DJINNI_DIRECTORY}/yaml/include/)
     set(DJINNI_YAML_OUT ${DJINNI_IDL_INCLUDE_DIR})
     set(DJINNI_YAML_OUT_FILE ${LIBRARY_TARGET}.yaml)
@@ -101,21 +102,6 @@ function(add_djinni_library LIBRARY_TARGET)
 
     # trigger re-generation if IDL file changes
     set_directory_properties(PROPERTIES CMAKE_CONFIGURE_DEPENDS ${DJINNI_IDL})
-
-    # determine target platform & target language
-    set(DARWIN_OS_LIST "Darwin;iOS;tvOS;watchOS")
-    set(WINDOWS_OS_LIST "Windows;WindowsStore")
-    if(CMAKE_SYSTEM_NAME IN_LIST DARWIN_OS_LIST)
-        set(DARWIN 1)
-        set(TARGET_LANGUAGE "Objective-C")
-    elseif(CMAKE_SYSTEM_NAME IN_LIST WINDOWS_OS_LIST)
-        set(WINDOWS 1)
-        set(TARGET_LANGUAGE "C#")
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
-        set(TARGET_LANGUAGE "Java (JNI)")
-    else()
-        set(TARGET_LANGUAGE "C++")
-    endif()
 
     # find Djinni executable.
     # On Windows `find_program()` does not work for finding the `djinni.bat` script.
@@ -134,51 +120,59 @@ function(add_djinni_library LIBRARY_TARGET)
     message(STATUS "${MESSAGE_PREFIX} ${DJINNI_VERSION_OUTPUT}")
 
     # generate Java sources and add prepare parameters for JNI generation.
-    if(ANDROID)
+    if("JAVA" IN_LIST DJINNI_LANGUAGES)
         if(DJINNI_NO_JNI_MAIN)
             set(DJINNI_GENERATE_MAIN false)
         else()
             set(DJINNI_GENERATE_MAIN true)
         endif()
         set(ADDITIONAL_DJINNI_PARAMETERS
-                --java-out ${DJINNI_JAVA_OUT}
-                --java-package ${DJINNI_JAVA_PACKAGE}
-                --jni-out ${DJINNI_JNI_OUT}
-                --jni-header-out ${DJINNI_JNI_HEADER_OUT}
-                --jni-namespace ${DJINNI_JNI_NAMESPACE}
-                --jni-include-prefix ${DJINNI_JNI_INCLUDE_PREFIX}
-                --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX}
-                --jni-generate-main ${DJINNI_GENERATE_MAIN})
-    elseif(DARWIN)
+            --java-out ${DJINNI_JAVA_OUT}
+            --jni-out ${DJINNI_JNI_OUT}
+            --jni-header-out ${DJINNI_JNI_HEADER_OUT}
+            --jni-generate-main ${DJINNI_GENERATE_MAIN})
+    endif()
+    if("OBJC" IN_LIST DJINNI_LANGUAGES)
         set(ADDITIONAL_DJINNI_PARAMETERS
-                --objc-out ${DJINNI_OBJC_OUT}
-                --objc-header-out ${DJINNI_OBJC_HEADER_OUT}
-                --objc-type-prefix ${DJINNI_OBJC_PREFIX}
-                --objcpp-out ${DJINNI_OBJCPP_OUT}
-                --objcpp-namespace ${DJINNI_OBJCPP_NAMESPACE}
-                --objc-include-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
-                --objcpp-include-cpp-prefix ${DJINNI_OBJCPP_INCLUDE_CPP_PREFIX}
-                --objcpp-include-objc-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
-                --objcpp-include-prefix ${DJINNI_OBJCPP_INCLUDE_PREFIX}
-                --objc-swift-bridging-header ${DJINNI_OBJC_SWIFT_BRIDGING_HEADER})
-    elseif(WINDOWS)
+            --objc-out ${DJINNI_OBJC_OUT}
+            --objc-header-out ${DJINNI_OBJC_HEADER_OUT}
+            --objcpp-out ${DJINNI_OBJCPP_OUT}
+            --objcpp-header-out ${DJINNI_OBJCPP_HEADER_OUT}
+            --objc-swift-bridging-header ${DJINNI_OBJC_SWIFT_BRIDGING_HEADER})
+    endif()
+    if("CPPCLI" IN_LIST DJINNI_LANGUAGES)
         set(ADDITIONAL_DJINNI_PARAMETERS
-                --cppcli-out ${DJINNI_CPPCLI_OUT}
-                --cppcli-namespace ${DJINNI_CPPCLI_NAMESPACE}
-                --cppcli-include-cpp-prefix ${DJINNI_CPP_INCLUDE_PREFIX})
+            --cppcli-out ${DJINNI_CPPCLI_OUT}
+        )
+    endif()
+    if("CPP" IN_LIST DJINNI_LANGUAGES)
+        set(ADDITIONAL_DJINNI_PARAMETERS
+            --cpp-out ${DJINNI_CPP_SRC_DIR}
+            --cpp-header-out ${DJINNI_CPP_HEADER_OUT}
+        )
     endif()
 
     set(DJINNI_GENERATED_FILES_OUTFILE ${CMAKE_CURRENT_BINARY_DIR}/djinni-generated-files.txt)
-    message(STATUS "${MESSAGE_PREFIX} Generating C++ Interface and Gluecode for ${TARGET_LANGUAGE}")
+    message(STATUS "${MESSAGE_PREFIX} Generating C++ Interface and Gluecode for ${DJINNI_LANGUAGES}")
 
     # generate c++ interface
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
             --idl ${DJINNI_IDL}
             ${DJINNI_IDL_INCLUDE_PARAMETERS}
-            --cpp-out ${DJINNI_CPP_SRC_DIR}
+            --cppcli-namespace ${DJINNI_CPPCLI_NAMESPACE}
+            --cppcli-include-cpp-prefix ${DJINNI_CPP_INCLUDE_PREFIX}
             --cpp-namespace ${DJINNI_NAMESPACE}
-            --cpp-header-out ${DJINNI_CPP_HEADER_OUT}
+            --java-package ${DJINNI_JAVA_PACKAGE}
+            --jni-namespace ${DJINNI_JNI_NAMESPACE}
+            --jni-include-prefix ${DJINNI_JNI_INCLUDE_PREFIX}
+            --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX}
             --cpp-include-prefix ${DJINNI_CPP_INCLUDE_PREFIX}
+            --objc-type-prefix ${DJINNI_OBJC_PREFIX}
+            --objc-include-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
+            --objcpp-include-cpp-prefix ${DJINNI_OBJCPP_INCLUDE_CPP_PREFIX}
+            --objcpp-include-objc-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
+            --objcpp-include-prefix ${DJINNI_OBJCPP_INCLUDE_PREFIX}
+            --objcpp-namespace ${DJINNI_OBJCPP_NAMESPACE}
             --yaml-out ${DJINNI_YAML_OUT}
             --yaml-out-file ${DJINNI_YAML_OUT_FILE}
             --list-out-files ${DJINNI_GENERATED_FILES_OUTFILE}
@@ -197,27 +191,26 @@ function(add_djinni_library LIBRARY_TARGET)
     set(DJINNI_GENERATED_CPP_FILES ${DJINNI_GENERATED_FILES})
     list(FILTER DJINNI_GENERATED_CPP_FILES EXCLUDE REGEX ${DJINNI_GENERATED_JAVA_FILES_REGEX})
 
-    add_library(${LIBRARY_TARGET} SHARED ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES} ${DJINNI_GENERATED_OTHER_FILES})
+    if(DJINNI_STATIC)
+        set(DJINNI_LIBRARY_TYPE STATIC)
+    elseif(DJINNI_SHARED)
+        set(DJINNI_LIBRARY_TYPE SHARED)
+    elseif(DJINNI_INTERFACE)
+        set(DJINNI_LIBRARY_TYPE INTERFACE)
+    endif()
+
+    add_library(${LIBRARY_TARGET} ${DJINNI_LIBRARY_TYPE} ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES} ${DJINNI_GENERATED_OTHER_FILES})
 
     target_link_libraries(${LIBRARY_TARGET} PUBLIC ${DJINNI_DEPENDENCIES})
-    target_compile_features(${LIBRARY_TARGET} PUBLIC cxx_std_17)
-
-    set_target_properties(${LIBRARY_TARGET} PROPERTIES
-            CXX_STANDARD 17
-            CXX_STANDARD_REQUIRED true
-            CXX_EXTENSIONS false
-            )
-
     target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_CPP_INCLUDE_DIR} ${DJINNI_IDL_INCLUDE_DIR})
 
     install(
         DIRECTORY
-            ${DJINNI_CPP_INCLUDE_DIR}
             ${DJINNI_IDL_INCLUDE_DIR}
         DESTINATION include
     )
 
-    if(ANDROID)
+    if("JAVA" IN_LIST DJINNI_LANGUAGES)
         find_package(Java 1.8 REQUIRED)
         include(UseJava)
 
@@ -241,8 +234,8 @@ function(add_djinni_library LIBRARY_TARGET)
 
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_JNI_INCLUDE_DIR})
-    elseif(DARWIN)
-        target_compile_options(${LIBRARY_TARGET} PRIVATE -fobjc-arc)
+    endif()
+    if("OBJC" IN_LIST DJINNI_LANGUAGES)
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_OBJC_INCLUDE_DIR} ${DJINNI_OBJCPP_INCLUDE_DIR})
 
         set(DJINNI_OBJC_SWIFT_BRIDGING_HEADER_PATH "${DJINNI_OBJC_HEADER_OUT}${DJINNI_OBJC_SWIFT_BRIDGING_HEADER}.h")
@@ -252,26 +245,28 @@ function(add_djinni_library LIBRARY_TARGET)
         list(APPEND DJINNI_GENERATED_PUBLIC_HEADER_FILES ${DJINNI_OBJC_SWIFT_BRIDGING_HEADER_PATH})
         list(FILTER DJINNI_GENERATED_PUBLIC_HEADER_FILES INCLUDE REGEX "^${DJINNI_OBJC_HEADER_OUT}.*$")
 
-        set_target_properties(${LIBRARY_TARGET} PROPERTIES
-            FRAMEWORK TRUE
-            MACOSX_FRAMEWORK_IDENTIFIER ${DJINNI_JAVA_PACKAGE}
-            PUBLIC_HEADER "${DJINNI_GENERATED_PUBLIC_HEADER_FILES}"
-        )
-
         install(DIRECTORY ${DJINNI_OBJCPP_INCLUDE_DIR}
             DESTINATION include
-            FILES_MATCHING PATTERN "*.h")
+        )
         install(DIRECTORY ${DJINNI_OBJC_INCLUDE_DIR}
             DESTINATION include
         )
-    elseif(WINDOWS)
-        set_target_properties(${LIBRARY_TARGET} PROPERTIES
-            COMMON_LANGUAGE_RUNTIME "netcore"
-            DOTNET_TARGET_FRAMEWORK "netcoreapp5.0"
-            COMPILE_FLAGS "/EHa"
-            VS_GLOBAL_CLRSupport "netcore"
+    endif()
+    if("CPP" IN_LIST DJINNI_LANGUAGES)
+        install(
+            DIRECTORY
+                ${DJINNI_CPP_INCLUDE_DIR}
+            DESTINATION include
         )
-        target_include_directories(${LIBRARY_TARGET} PUBLIC djinni-support-lib)
+    endif()
+
+    set(DARWIN_LIST Darwin iOS)
+    if(CMAKE_SYSTEM_NAME IN_LIST DARWIN_LIST)
+        set_target_properties(${LIBRARY_TARGET} PROPERTIES
+                FRAMEWORK TRUE
+                MACOSX_FRAMEWORK_IDENTIFIER ${DJINNI_JAVA_PACKAGE}
+                PUBLIC_HEADER "${DJINNI_GENERATED_PUBLIC_HEADER_FILES}"
+        )
     endif()
 
     install(TARGETS ${LIBRARY_TARGET} EXPORT ${LIBRARY_TARGET}Targets
@@ -281,46 +276,6 @@ function(add_djinni_library LIBRARY_TARGET)
         PUBLIC_HEADER DESTINATION include
     )
 
+
+
 endfunction()
-
-
-macro(djinni_project PROJECT_NAME)
-    set(DARWIN_OS_LIST Darwin iOS tvOS watchOS)
-    if(CMAKE_SYSTEM_NAME IN_LIST DARWIN_OS_LIST)
-        set(PROJECT_LANGUAGES OBJC OBJCXX)
-        set(DARWIN 1)
-    endif()
-    set(WINDOWS_OS_LIST "Windows;WindowsStore")
-    if(CMAKE_SYSTEM_NAME IN_LIST WINDOWS_OS_LIST)
-        set(WINDOWS 1)
-    endif()
-    project(${PROJECT_NAME} CXX ${PROJECT_LANGUAGES})
-endmacro()
-
-macro(djinni_target_link_support_lib TARGET VERSION)
-    FetchContent_Declare(djinni-support-lib
-            GIT_REPOSITORY https://github.com/cross-language-cpp/djinni-support-lib.git
-            GIT_TAG ${VERSION})
-    # set options for djinni-support-lib
-    set(DJINNI_BUILD_TESTING OFF CACHE INTERNAL "")
-    if(ANDROID)
-        set(DJINNI_WITH_JNI ON CACHE INTERNAL "")
-    elseif(DARWIN)
-        set(DJINNI_WITH_OBJC ON CACHE INTERNAL "")
-    elseif(WINDOWS)
-        set(DJINNI_WITH_CPPCLI ON CACHE INTERNAL "")
-    endif()
-    if(NOT djinni-support-lib_POPULATED)
-        FetchContent_Populate(djinni-support-lib)
-        add_subdirectory(${djinni-support-lib_SOURCE_DIR} ${djinni-support-lib_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif()
-
-    if(NOT WINDOWS)
-        target_link_libraries(${TARGET} PRIVATE djinni-support-lib::djinni-support-lib)
-    else()
-        # This is a workaround because I was not able to link a shared djinni-support-lib built for C++/CLI & .NET 5
-        # see https://github.com/cross-language-cpp/djinni-support-lib/pull/33
-        target_sources(${TARGET} PUBLIC ${djinni-support-lib_SOURCE_DIR}/djinni/cppcli/WrapperCache.cpp ${djinni-support-lib_SOURCE_DIR}/djinni/cppcli/Error.cpp)
-        target_include_directories(${TARGET} PRIVATE ${djinni-support-lib_SOURCE_DIR})
-    endif()
-endmacro()
