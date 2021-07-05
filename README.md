@@ -66,8 +66,8 @@ If you miss a configuration option anyways, please consider opening an issue.
 The options are:
 
 - `IDL <filename>`<br>
-  filename/path of the Djinni-IDL file that should be processed.
-  `SHARED|STATIC|INTERFACE`<br>
+  filename/path of the Djinni-IDL file that should be processed
+- `SHARED|STATIC|INTERFACE`<br>
   Optional;<br>
   Type of library. If no type is given explicitly the type is `STATIC` or `SHARED` based on whether the current value
   of the variable `BUILD_SHARED_LIBS` is `ON`
@@ -104,7 +104,7 @@ The options are:
   
 ## Example
 
-*(A full project example is coming soon, stay tuned)*
+*For a full usage example please have a look at [jothepro/djinni-library-template](https://github.com/jothepro/djinni-library-template)!*
 
 Given a Djinni-IDL file named `example.djinni`, this is all you need in your `CMakeLists.txt`:
 
