@@ -109,7 +109,6 @@ The options are:
 Given a Djinni-IDL file named `example.djinni`, this is all you need in your `CMakeLists.txt`:
 
 ```cmake
-
 add_djinni_library(Example
     IDL example.djinni
     LANGUAGES CPP JAVA CPPCLI OBJC
@@ -117,8 +116,6 @@ add_djinni_library(Example
     SOURCES
       src/example.cpp
 )
-
-djinni_target_link_support_lib(Example v1.0.0)
 ```
 
 This will generate a target `Example` that contains all the required gluecode from the interface defined in `example.djinni` and
