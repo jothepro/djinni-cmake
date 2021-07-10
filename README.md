@@ -23,7 +23,7 @@ It may evolve over time to a more powerful tool with more configuration options.
 
 ## Prerequisites
 
-- [CMake](https://cmake.org/) >= 3.18
+- [CMake](https://cmake.org/) >= 3.19
 - [Djinni Generator](https://github.com/cross-language-cpp/djinni-generator) >= 1.1.0
 
 ## Installation
@@ -37,7 +37,7 @@ include(Djinni)
 
 Watch this repository so you don't miss updates! 🔔
 
-### Adding a Djinni target
+## Synopsis
 
 ```cmake
 add_djinni_library(<target> [SHARED|STATIC|INTERFACE]
@@ -61,7 +61,7 @@ the Java gluecode to `<jar-output-dir>` when the target `<target>` is built.
 This generator is intentionally favoring convention over configuration to keep things as simple as possible.
 If you miss a configuration option anyways, please consider opening an issue.
 
-#### Options
+## Options
 
 The options are:
 
