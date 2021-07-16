@@ -28,11 +28,11 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "NO_JNI_MAIN;STATIC;SHARED;INTERFACE"
+            "NO_JNI_MAIN;STATIC;SHARED"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
-            "LANGUAGES;SOURCES;DEPENDENCIES"
+            "LANGUAGES;SOURCES;"
         # args
             ${ARGN}
     )
@@ -88,17 +88,6 @@ function(add_djinni_library LIBRARY_TARGET)
     set(DJINNI_JAVA_OUT ${DJINNI_DIRECTORY}/java/${DJINNI_JAVA_PATH})
     set(DJINNI_OBJC_SWIFT_BRIDGING_HEADER ${LIBRARY_TARGET})
     set(DJINNI_JAVA_LIBRARY_TARGET ${LIBRARY_TARGET}-java)
-    set(DJINNI_IDL_INCLUDE_DIR ${DJINNI_DIRECTORY}/yaml/include/)
-    set(DJINNI_YAML_OUT ${DJINNI_IDL_INCLUDE_DIR})
-    set(DJINNI_YAML_OUT_FILE ${LIBRARY_TARGET}.yaml)
-
-    set(DJINNI_IDL_INCLUDE_DIRS ${DJINNI_IDL_INCLUDE_DIR})
-    foreach(DJINNI_DEPENDENCY ${DJINNI_DEPENDENCIES})
-        get_target_property(DJINNI_DEPENDENCY_INCLUDE_DIR ${DJINNI_DEPENDENCY} INTERFACE_INCLUDE_DIRECTORIES)
-        list(APPEND DJINNI_IDL_INCLUDE_DIRS "${DJINNI_DEPENDENCY_INCLUDE_DIR}")
-    endforeach()
-    set(DJINNI_IDL_INCLUDE_PARAMETERS ${DJINNI_IDL_INCLUDE_DIRS})
-    list(TRANSFORM DJINNI_IDL_INCLUDE_PARAMETERS PREPEND "--idl-include-path;")
 
     # trigger re-generation if IDL file changes
     set_directory_properties(PROPERTIES CMAKE_CONFIGURE_DEPENDS ${DJINNI_IDL})
@@ -153,7 +142,7 @@ function(add_djinni_library LIBRARY_TARGET)
     endif()
 
     set(DJINNI_GENERATED_FILES_OUTFILE ${CMAKE_CURRENT_BINARY_DIR}/djinni-generated-files.txt)
-    message(STATUS "${MESSAGE_PREFIX} Generating C++ Interface and Gluecode for ${DJINNI_LANGUAGES}")
+    message(STATUS "${MESSAGE_PREFIX} Generating Gluecode for ${DJINNI_LANGUAGES}")
 
     # generate c++ interface
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
@@ -173,8 +162,6 @@ function(add_djinni_library LIBRARY_TARGET)
             --objcpp-include-objc-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
             --objcpp-include-prefix ${DJINNI_OBJCPP_INCLUDE_PREFIX}
             --objcpp-namespace ${DJINNI_OBJCPP_NAMESPACE}
-            --yaml-out ${DJINNI_YAML_OUT}
-            --yaml-out-file ${DJINNI_YAML_OUT_FILE}
             --list-out-files ${DJINNI_GENERATED_FILES_OUTFILE}
             ${ADDITIONAL_DJINNI_PARAMETERS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -193,49 +180,21 @@ function(add_djinni_library LIBRARY_TARGET)
 
     if(DJINNI_STATIC)
         set(DJINNI_LIBRARY_TYPE STATIC)
-        set(DJINNI_TARGET_PROPERTY_MODE PUBLIC)
     elseif(DJINNI_SHARED)
         set(DJINNI_LIBRARY_TYPE SHARED)
-        set(DJINNI_TARGET_PROPERTY_MODE PUBLIC)
-    elseif(DJINNI_INTERFACE)
-        set(DJINNI_LIBRARY_TYPE INTERFACE)
-        set(DJINNI_TARGET_PROPERTY_MODE INTERFACE)
-    else()
-        set(DJINNI_TARGET_PROPERTY_MODE PUBLIC)
     endif()
 
     add_library(${LIBRARY_TARGET} ${DJINNI_LIBRARY_TYPE} ${DJINNI_GENERATED_CPP_FILES} ${DJINNI_SOURCES} ${DJINNI_GENERATED_OTHER_FILES})
-
-    target_link_libraries(${LIBRARY_TARGET} ${DJINNI_TARGET_PROPERTY_MODE} ${DJINNI_DEPENDENCIES})
-    target_include_directories(${LIBRARY_TARGET} ${DJINNI_TARGET_PROPERTY_MODE} ${DJINNI_CPP_INCLUDE_DIR} ${DJINNI_IDL_INCLUDE_DIR})
-
-    install(
-        DIRECTORY
-            ${DJINNI_IDL_INCLUDE_DIR}
-        DESTINATION include
-    )
+    target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_CPP_INCLUDE_DIR})
 
     if("JAVA" IN_LIST DJINNI_LANGUAGES)
         find_package(Java 1.8 REQUIRED)
         include(UseJava)
 
-        foreach(DJINNI_JAR_INCLUDE_DIR ${DJINNI_IDL_INCLUDE_DIRS})
-            file(GLOB JAR_FILE LIST_DIRECTORIES false "${DJINNI_JAR_INCLUDE_DIR}/*.jar")
-            list(APPEND CMAKE_JAVA_INCLUDE_PATH ${JAR_FILE})
-        endforeach()
-        list(APPEND CMAKE_JAVA_INCLUDE_PATH ${DJINNI_IDL_INCLUDE_DIRS})
         add_jar(${DJINNI_JAVA_LIBRARY_TARGET}
                 SOURCES ${DJINNI_GENERATED_JAVA_FILES}
                 OUTPUT_DIR ${DJINNI_JAR_OUTPUT_DIR}
                 OUTPUT_NAME ${LIBRARY_TARGET})
-
-        install(FILES ${DJINNI_JAR_OUTPUT_DIR}/${LIBRARY_TARGET}.jar DESTINATION include)
-
-        install(
-            DIRECTORY
-                ${DJINNI_JNI_INCLUDE_DIR}
-            DESTINATION include
-        )
 
         add_dependencies(${LIBRARY_TARGET} ${DJINNI_JAVA_LIBRARY_TARGET})
         target_include_directories(${LIBRARY_TARGET} PUBLIC ${DJINNI_JNI_INCLUDE_DIR})
@@ -250,11 +209,12 @@ function(add_djinni_library LIBRARY_TARGET)
         list(APPEND DJINNI_GENERATED_PUBLIC_HEADER_FILES ${DJINNI_OBJC_SWIFT_BRIDGING_HEADER_PATH})
         list(FILTER DJINNI_GENERATED_PUBLIC_HEADER_FILES INCLUDE REGEX "^${DJINNI_OBJC_HEADER_OUT}.*$")
 
-        install(DIRECTORY ${DJINNI_OBJCPP_INCLUDE_DIR}
-            DESTINATION include
-        )
-        install(DIRECTORY ${DJINNI_OBJC_INCLUDE_DIR}
-            DESTINATION include
+        set_target_properties(${LIBRARY_TARGET} PROPERTIES
+            FRAMEWORK TRUE
+            MACOSX_FRAMEWORK_IDENTIFIER ${DJINNI_JAVA_PACKAGE}
+            PUBLIC_HEADER "${DJINNI_GENERATED_PUBLIC_HEADER_FILES}"
+            XCODE_ATTRIBUTE_DEFINES_MODULE YES
+            XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
         )
     endif()
     if("CPP" IN_LIST DJINNI_LANGUAGES)
@@ -263,26 +223,11 @@ function(add_djinni_library LIBRARY_TARGET)
                 ${DJINNI_CPP_INCLUDE_DIR}
             DESTINATION include
         )
-    endif()
-
-    set(DARWIN_LIST Darwin iOS)
-    if(CMAKE_SYSTEM_NAME IN_LIST DARWIN_LIST)
-        set_target_properties(${LIBRARY_TARGET} PROPERTIES
-                FRAMEWORK TRUE
-                MACOSX_FRAMEWORK_IDENTIFIER ${DJINNI_JAVA_PACKAGE}
-                PUBLIC_HEADER "${DJINNI_GENERATED_PUBLIC_HEADER_FILES}"
-                XCODE_ATTRIBUTE_DEFINES_MODULE YES
-                XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+        install(TARGETS ${LIBRARY_TARGET} EXPORT ${LIBRARY_TARGET}Targets
+            LIBRARY DESTINATION lib
+            FRAMEWORK DESTINATION lib
+            INCLUDES DESTINATION include
+            PUBLIC_HEADER DESTINATION include
         )
     endif()
-
-    install(TARGETS ${LIBRARY_TARGET} EXPORT ${LIBRARY_TARGET}Targets
-        LIBRARY DESTINATION lib
-        FRAMEWORK DESTINATION lib
-        INCLUDES DESTINATION include
-        PUBLIC_HEADER DESTINATION include
-    )
-
-
-
 endfunction()

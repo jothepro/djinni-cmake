@@ -40,14 +40,13 @@ Watch this repository so you don't miss updates! 🔔
 ## Synopsis
 
 ```cmake
-add_djinni_library(<target> [SHARED|STATIC|INTERFACE]
+add_djinni_library(<target> [SHARED|STATIC]
         IDL <filename>
         LANGUAGES <CPP|JAVA|CPPCLI|OBJC> [CPP|JAVA|CPPCLI|OBJC ...]
         [NO_JNI_MAIN]
         [NAMESPACE <namespace>]
         [DIRECTORY <output-dir>]
         [SOURCES <sources>]
-        [DEPENDENCIES <dependencies>]
         [JAR_OUTPUT_DIR <jar-output-dir>]
 )
 ```
@@ -67,10 +66,10 @@ The options are:
 
 - `IDL <filename>`<br>
   filename/path of the Djinni-IDL file that should be processed
-- `SHARED|STATIC|INTERFACE`<br>
+- `SHARED|STATIC`<br>
   Optional;<br>
   Type of library. If no type is given explicitly the type is `STATIC` or `SHARED` based on whether the current value
-  of the variable `BUILD_SHARED_LIBS` is `ON`
+  of the variable `BUILD_SHARED_LIBS` is `ON`.
 - `LANGUAGES`<br>
   list of languages that bindings should be generated for. Possible values: `CPP`, `JAVA`, `CPPCLI`, `OBJC`
 - `NO_JNI_MAIN`<br>
@@ -93,11 +92,6 @@ The options are:
 - `SOURCES <sources>` <br>
   Optional; <br>
   Additional sources. This could for example be the sources that implement the Djinni interface in C++.
-- `DEPENDENCIES <dependencies>` <br>
-  Optional; <br>
-  Other (Djinni) targets that the library links to. Their `include` directories are appended to `--idl-include-path` and
-  any `.jar` in the `include` directories will be appended to `CMAKE_JAVA_INCLUDE_PATH`. That way other Djinni libraries
-  can be linked.
 - `JAR_OUTPUT_DIR <jar-output-dir>`<br>
   Optional; Default: `${CMAKE_CURRENT_BINARY_DIR}`<br>
   The directory to which the jar should be written if gluecode for Android is created.
