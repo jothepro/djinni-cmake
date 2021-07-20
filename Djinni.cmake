@@ -94,9 +94,17 @@ function(add_djinni_library LIBRARY_TARGET)
 
     # find Djinni executable.
     # On Windows `find_program()` does not work for finding the `djinni.bat` script.
-    # The script must either be on the PATH or `DJINNI_EXECUTABLE` must explicitly be predefined.
+    # The script must either be
+    # - on the PATH
+    # - explicitly predefined in cache variable `DJINNI_EXECUTABLE`
+    # - installed from conan
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-        if(NOT DEFINED CACHE{DJINNI_EXECUTABLE})
+        # If the the generator is installed from conan, use find_package to get the installation path
+        find_package(djinni-generator QUIET)
+        if(djinni-generator_FOUND)
+            find_file(DJINNI_EXECUTABLE bin/djinni.bat REQUIRED)
+        else()
+            # Otherwise just set the executable and hope that the binary is on the path
             set(DJINNI_EXECUTABLE djinni.bat CACHE FILEPATH "path of djinni binary")
         endif()
     else()
