@@ -28,7 +28,7 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "NO_JNI_MAIN;STATIC;SHARED"
+            "NO_JNI_MAIN;STATIC;SHARED;NO_OBJC_PREFIX"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
@@ -54,7 +54,7 @@ function(add_djinni_library LIBRARY_TARGET)
     # derive namespaces, prefixes, paths from NAMESPACE
     string(REPLACE "::" "/" DJINNI_NAMESPACE_PATH ${DJINNI_NAMESPACE})
     set(DJINNI_JNI_NAMESPACE "${DJINNI_NAMESPACE}::jni")
-    set(DJINNI_OBJCPP_NAMESPACE "${DJINNI_NAMESPACE}::objcpp")
+    set(DJINNI_OBJCPP_NAMESPACE "objcpp::${DJINNI_NAMESPACE}")
     set(DJINNI_CPPCLI_NAMESPACE "${DJINNI_NAMESPACE}::cppcli")
 
     string(REPLACE "::" "." DJINNI_JAVA_PACKAGE ${DJINNI_NAMESPACE})
@@ -152,6 +152,11 @@ function(add_djinni_library LIBRARY_TARGET)
     set(DJINNI_GENERATED_FILES_OUTFILE ${CMAKE_CURRENT_BINARY_DIR}/djinni-generated-files.txt)
     message(STATUS "${MESSAGE_PREFIX} Generating Gluecode for ${DJINNI_LANGUAGES}")
 
+    if(NOT DJINNI_NO_OBJC_PREFIX)
+        list(APPEND ADDITIONAL_DJINNI_PARAMETERS --objc-type-prefix ${DJINNI_OBJC_PREFIX})
+    endif()
+
+
     # generate c++ interface
     execute_process(COMMAND ${DJINNI_EXECUTABLE}
             --idl ${DJINNI_IDL}
@@ -164,7 +169,6 @@ function(add_djinni_library LIBRARY_TARGET)
             --jni-include-prefix ${DJINNI_JNI_INCLUDE_PREFIX}
             --jni-include-cpp-prefix ${DJINNI_JNI_INCLUDE_CPP_PREFIX}
             --cpp-include-prefix ${DJINNI_CPP_INCLUDE_PREFIX}
-            --objc-type-prefix ${DJINNI_OBJC_PREFIX}
             --objc-include-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}
             --objcpp-include-cpp-prefix ${DJINNI_OBJCPP_INCLUDE_CPP_PREFIX}
             --objcpp-include-objc-prefix ${DJINNI_OBJC_INCLUDE_PREFIX}

@@ -44,6 +44,7 @@ add_djinni_library(<target> [SHARED|STATIC]
         IDL <filename>
         LANGUAGES <CPP|JAVA|CPPCLI|OBJC> [CPP|JAVA|CPPCLI|OBJC ...]
         [NO_JNI_MAIN]
+        [NO_OBJC_PREFIX]
         [NAMESPACE <namespace>]
         [DIRECTORY <output-dir>]
         [SOURCES <sources>]
@@ -75,6 +76,9 @@ The options are:
 - `NO_JNI_MAIN`<br>
   Optional;<br>
   By default `JNI_OnLoad` & `JNI_OnUnload` entrypoints for JNI are included. Set this argument to not include entrypoints.
+- `NO_OBJC_PREFIX`<br>
+  Optional;<br>
+  By default Objective-C Types are prefixed with a few letters derived from the provided `NAMESPACE`. This option disables the prefix.
 - `NAMESPACE <namespace>`<br>
   Optional; Default: `Djinni`<br>
   The namespace for the generated code. Each namespace part should start with an uppercase letter.
