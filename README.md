@@ -10,9 +10,9 @@ Simple CMake wrapper for [Djinni](https://djinni.xlcpp.dev/).
 While I like to have a good portion of configuration options in the [Djinni Generator](https://github.com/cross-language-cpp/djinni-generator), 
 I think it is easier to get started with Djinni if a few presumptions are made for the developer.
 
-This wrapper attemts to be a tool that allows a quick and simple start into a new project with C++ using Djinni.
+This wrapper attempts to be a tool that allows a quick and simple start into a new project with C++ using Djinni.
 
-It may evolve over time to a more powerful tool with more configuration options. This depends on your feedback and my future requirements.
+It may evolve over time to a more powerful utility with more configuration options. This depends on your feedback and my future requirements.
 
 ## Features
 
