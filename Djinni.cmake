@@ -28,7 +28,7 @@ cmake_minimum_required(VERSION 3.18)
 function(add_djinni_library LIBRARY_TARGET)
     cmake_parse_arguments(DJINNI
         # options
-            "NO_JNI_MAIN;STATIC;SHARED;NO_OBJC_PREFIX"
+            "NO_JNI_MAIN;STATIC;SHARED;NO_OBJC_PREFIX;NO_DSYM"
         # one-value keywords
             "IDL;NAMESPACE;DIRECTORY;JAR_OUTPUT_DIR"
         # multi-value keywords
@@ -216,6 +216,12 @@ function(add_djinni_library LIBRARY_TARGET)
             XCODE_ATTRIBUTE_DEFINES_MODULE YES
             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
         )
+
+        if(NOT DJINNI_NO_DSYM)
+            set_target_properties(${LIBRARY_TARGET} PROPERTIES
+                XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf-with-dsym
+            )
+        endif()
     endif()
     if("CPP" IN_LIST DJINNI_LANGUAGES)
         install(

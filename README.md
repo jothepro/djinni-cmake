@@ -45,6 +45,7 @@ add_djinni_library(<target> [SHARED|STATIC]
         LANGUAGES <CPP|JAVA|CPPCLI|OBJC> [CPP|JAVA|CPPCLI|OBJC ...]
         [NO_JNI_MAIN]
         [NO_OBJC_PREFIX]
+        [NO_DSYM]
         [NAMESPACE <namespace>]
         [DIRECTORY <output-dir>]
         [SOURCES <sources>]
@@ -79,6 +80,10 @@ The options are:
 - `NO_OBJC_PREFIX`<br>
   Optional;<br>
   By default Objective-C Types are prefixed with a few letters derived from the provided `NAMESPACE`. This option disables the prefix.
+- `NO_DSYM`<br>
+  Optional;<br>
+  When targeting Objective-C, by default the XCode property `DEBUG_INFORMATION_FORMAT` is set to `dwarf-with-dsym`, which
+  will generate a .dSYM directory containing debugging symbols. This option disables the dSYM generation.
 - `NAMESPACE <namespace>`<br>
   Optional; Default: `Djinni`<br>
   The namespace for the generated code. Each namespace part should start with an uppercase letter.
